@@ -2,9 +2,11 @@ package com.example.roomwordsample;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,16 +59,61 @@ public abstract class WordRoomDatabase extends RoomDatabase {
     static final ExecutorService databaseWriteExecutor =
             Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
+    /**
+     * Then, add the callback to the database build sequence right before calling .build() on the Room.databaseBuilder():
+     * .addCallback(sRoomDatabaseCallback)
+     * @param context
+     * @return
+     */
+
     static WordRoomDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (WordRoomDatabase.class) {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             WordRoomDatabase.class, "word_database")
+                            .addCallback(sRoomDatabaseCallback)
                             .build();
                 }
             }
         }
         return INSTANCE;
     }
+
+    /**
+     * There is no data in the database. You will add data in two ways: Add some data when the database is opened,
+     * and add an Activity for adding words.
+     *
+     * To delete all content and populate the database when the app is installed,
+     * you create a RoomDatabase.Callback and override onCreate().
+     *
+     * Here is the code for creating the callback within the WordRoomDatabase class.
+     * Because you cannot do Room database operations on the UI thread, onCreate() uses the previously defined databaseWriteExecutor
+     * to execute a lambda on a background thread. The lambda deletes the contents of the database,
+     * then populates it with the two words "Hello" and "World". Feel free to add more words!
+     */
+
+
+    /**
+     * Override the onCreate method to populate the database.
+     * For this sample, we clear the database every time it is created.
+     */
+    private static RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
+        @Override
+        public void onCreate(@NonNull SupportSQLiteDatabase db) {
+            super.onCreate(db);
+
+            databaseWriteExecutor.execute(() -> {
+                // Populate the database in the background.
+                // If you want to start with more words, just add them.
+                WordDao dao = INSTANCE.wordDao();
+                dao.deleteAll();
+
+                Word word = new Word("Hello");
+                dao.insert(word);
+                word = new Word("World");
+                dao.insert(word);
+            });
+        }
+    };
 }
