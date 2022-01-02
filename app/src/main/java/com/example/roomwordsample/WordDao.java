@@ -1,5 +1,6 @@
 package com.example.roomwordsample;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
@@ -40,10 +41,23 @@ public interface WordDao {
 
 
     /**
-     @Query("SELECT * FROM word_table ORDER BY word ASC"): Returns a list of words sorted in ascending order.
-     List<Word> getAlphabetizedWords(): A method to get all the words and have it return a List of Words.
-     */
+      * @Query("SELECT * FROM word_table ORDER BY word ASC"): Returns a list of words sorted in ascending order.
+      * List<Word> getAlphabetizedWords(): A method to get all the words and have it return a List of Words.
+      *
+      *
+      * When data changes you usually want to take some action, such as displaying the updated data in the UI.
+      * This means you have to observe the data so that when it changes, you can react.
+      * Depending on how the data is stored, this can be tricky. Observing changes to data across multiple components of your
+      * app can create explicit, rigid dependency paths between the components.
+      * This makes testing and debugging difficult, among other things.
+      *
+      * LiveData, a lifecycle library class for data observation, solves this problem.
+      * Use a return value of type LiveData in your method description, and Room generates all necessary code to
+      * update the LiveData when the database is updated.
+      *
+      */
     @Query("SELECT * FROM word_table ORDER BY word ASC")
-    List<Word> getAlphabetizedWords();
+    LiveData<List<Word>> getAlphabetizedWords();
 
-}
+
+ }
